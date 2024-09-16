@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, Button, StyleSheet, Animated } from "react-native";
 
-// Predefined flashcards data
 const flashcards = [
   { front: "うみ", back: "Umi (Sea)" },
   { front: "ふね", back: "Fune (Ship)" },
@@ -13,101 +12,92 @@ const flashcards = [
   { front: "ぼうけん", back: "Bōken (Adventure)" },
   { front: "なかよし", back: "Nakayoshi (Friendly)" },
   { front: "じゆう", back: "Jiyū (Freedom)" },
-  // Add more flashcards here
 ];
 
-// Function to shuffle an array
-const shuffleArray = (array) => {
-  let shuffledArray = [...array]; // Clone the array to avoid modifying the original
-  return shuffledArray.sort(() => Math.random() - 0.5);
+const shuffle = (array) => {
+  let shuffledDeck = [...array];
+  return shuffledDeck.sort(() => Math.random() - 0.5);
 };
 
 export default function App() {
-  const [shuffledFlashcards, setShuffledFlashcards] = useState(flashcards);
-  const [index, setIndex] = useState(0);
-  const [showBack, setShowBack] = useState(false);
+  const [shuffledDeck, setShuffledDeck] = useState(flashcards);
+  const [ndx, setNdx] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
   const [isAutoplay, setIsAutoplay] = useState(false);
-  const [intervalId, setIntervalId] = useState(null);
+  const [intID, setIntID] = useState(null);
 
-  const slideAnim = useRef(new Animated.Value(0)).current; // Animation value for sliding
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // Function to shuffle the flashcards
-  const handleShuffle = () => {
-    setShuffledFlashcards(shuffleArray(shuffledFlashcards));
-    setIndex(0); // Reset index to 0 after shuffling
-    setShowBack(false); // Reset to show front side
+  const shuffleDeck = () => {
+    setShuffledDeck(shuffle(shuffledDeck));
+    setNdx(0);
+    setIsFlipped(false);
   };
 
-  // Function to slide the card in from the right (next)
-  const slideNext = () => {
+  const nextCard = () => {
     Animated.timing(slideAnim, {
-      toValue: -300, // Slide out to the left
+      toValue: -300,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      setIndex((prevIndex) => (prevIndex + 1) % shuffledFlashcards.length);
-      setShowBack(false); // Reset to show front side of the next card
-      slideAnim.setValue(300); // Reset the position to the right
+      setNdx((prevNdx) => (prevNdx + 1) % shuffledDeck.length);
+      setIsFlipped(false);
+      slideAnim.setValue(300);
       Animated.timing(slideAnim, {
-        toValue: 0, // Slide in from the right
+        toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
     });
   };
 
-  // Function to slide the card in from the left (previous)
-  const slidePrevious = () => {
+  const prevCard = () => {
     Animated.timing(slideAnim, {
-      toValue: 300, // Slide out to the right
+      toValue: 300,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      setIndex(
-        (prevIndex) =>
-          (prevIndex - 1 + shuffledFlashcards.length) %
-          shuffledFlashcards.length
+      setNdx(
+        (prevNdx) => (prevNdx - 1 + shuffledDeck.length) % shuffledDeck.length
       );
-      setShowBack(false); // Reset to show front side of the previous card
-      slideAnim.setValue(-300); // Reset the position to the left
+      setIsFlipped(false);
+      slideAnim.setValue(-300);
       Animated.timing(slideAnim, {
-        toValue: 0, // Slide in from the left
+        toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
     });
   };
 
-  // Function to flip the flashcard
   const flipCard = () => {
-    setShowBack((prevShowBack) => !prevShowBack);
+    setIsFlipped((prevIsFlipped) => !prevIsFlipped);
   };
 
-  // Toggle autoplay on/off
   const toggleAutoplay = () => {
     if (isAutoplay) {
-      // Stop autoplay
-      clearInterval(intervalId);
-      setIntervalId(null);
+      clearInterval(intID);
+      setIntID(null);
       setIsAutoplay(false);
     } else {
-      // Start autoplay
       const id = setInterval(() => {
-        slideNext(); // Use the slide animation when autoplay is on
-      }, 3000); // 3 second interval
-      setIntervalId(id);
+        nextCard();
+      }, 3000);
+      setIntID(id);
       setIsAutoplay(true);
     }
   };
 
-  // Stop autoplay when the component unmounts or when autoplay is toggled off
   useEffect(() => {
-    return () => clearInterval(intervalId); // Cleanup interval on unmount
-  }, [intervalId]);
+    return () => clearInterval(intID);
+  }, [intID]);
 
   return (
     <View style={styles.container}>
-      {/* Flashcard display with animation */}
+      <View style={styles.otherContainer}>
+        <Text style={styles.mainText}>Flash.</Text>
+        <Text style={styles.subText}>Powered by Mary</Text>
+      </View>
       <Animated.View
         style={[
           styles.card,
@@ -117,48 +107,46 @@ export default function App() {
         ]}
       >
         <Text style={styles.text}>
-          {showBack
-            ? shuffledFlashcards[index].back
-            : shuffledFlashcards[index].front}
+          {isFlipped ? shuffledDeck[ndx].back : shuffledDeck[ndx].front}
         </Text>
         <Button
-          title={showBack ? "Show Front" : "Show Back"}
+          title={isFlipped ? "Flip Front" : "Flip Back"}
           onPress={flipCard}
+          color="black"
         />
       </Animated.View>
 
-      {/* Navigation buttons */}
       <View style={styles.buttons}>
-        <Button title="Previous" onPress={slidePrevious} />
-        <Button title="Next" onPress={slideNext} />
-      </View>
-
-      {/* Shuffle button */}
-      <View style={styles.shuffleButton}>
-        <Button title="Shuffle" onPress={handleShuffle} />
-      </View>
-
-      {/* Autoplay button */}
-      <View style={styles.autoplayButton}>
+        <Button title="Previous" onPress={prevCard} color="black" />
+        <Button title="Next" onPress={nextCard} color="black" />
+        <Button title="Shuffle" onPress={shuffleDeck} color="black" />
         <Button
-          title={isAutoplay ? "Stop Autoplay" : "Start Autoplay"}
+          title={isAutoplay ? "Stop Auto" : "Start Auto"}
           onPress={toggleAutoplay}
+          color="black"
         />
       </View>
     </View>
   );
 }
 
-// Styling for the components
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
+  mainText: {
+    fontSize: 80,
+    fontWeight: "800",
+  },
+  subText: {
+    marginBottom: "10%",
+  },
+
   card: {
     width: 300,
-    height: 200,
+    height: 350,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -169,17 +157,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   text: {
-    fontSize: 20,
+    fontSize: 30,
     marginBottom: 10,
+    fontWeight: "700",
   },
   buttons: {
     flexDirection: "row",
-    marginTop: 20,
-  },
-  shuffleButton: {
-    marginTop: 20,
-  },
-  autoplayButton: {
+    justifyContent: "space-between",
+    width: "80%",
     marginTop: 20,
   },
 });
